@@ -1,0 +1,12 @@
+# This is testing work_queue and makeflow distributed computing framework from the CCTools group
+
+# Makeflow
+cd results
+
+makeflow -T wq --jx ../run_hamr.jx -a -M run_hamr_EL -p 6001 -dall -o dall.log
+
+#work_queue_factory
+
+work_queue_factory -T local -M run_hamr_EL -w 6 -W 10 --workers-per-cycle 6 --cores=1
+
+

@@ -1,0 +1,43 @@
+{
+        "define" : {
+                "DATA_DIR": "../data",
+                "RESULTS_DIR": ".",
+								"SING_DIR": "../hamr_pipeline",
+                "SING_RUN":  "singularity run --cleanenv ", # Singularity containers
+                "TOTAL_SEQ":	3,  # Total number of sequences in input
+                "GREP_CMD": "grep -P '^\@|NH:i:1$'"
+        },
+
+    "rules": [
+        {
+          "command" : "grep -P '^\@|NH:i:1$' "+DATA_DIR+"/SRR7947123.seg"+N+".sam > "+RESULTS_DIR+"/SRR7947123.seg"+N+".unique.sam",
+
+          "inputs" : [DATA_DIR+"/SRR7947123.seg"+N+".sam"],
+
+          "outputs" : [RESULTS_DIR+"/SRR7947123.seg"+N+".unique.sam"]
+
+          } for N in range (0, TOTAL_SEQ),
+
+        {
+        	"command" : template("{SING_RUN}{SING_DIR}/samtools_1.10.sif samtools view -bS "+RESULTS_DIR+"/SRR7947123.seg{N}.unique.sam > "+RESULTS_DIR+"/SRR7947123.seg{N}.unique.bam"),
+        	"inputs" : [RESULTS_DIR+"/SRR7947123.seg"+N+".unique.sam",
+										  SING_DIR+"/samtools_1.10.sif"],
+        	"outputs" : [RESULTS_DIR+"/SRR7947123.seg"+N+".unique.bam"]
+        } for N in range (0, TOTAL_SEQ),
+
+	 			{
+       	  "command" : template("{SING_RUN}{SING_DIR}/samtools_1.10.sif samtools sort "+RESULTS_DIR+"/SRR7947123.seg{N}.unique.bam > "+RESULTS_DIR+"/SRR7947123.seg{N}.sort.bam"),
+       	  "inputs" : [RESULTS_DIR+"/SRR7947123.seg"+N+".unique.bam",
+									    SING_DIR+"/samtools_1.10.sif"],
+        	"outputs" : [RESULTS_DIR+"/SRR7947123.seg"+N+".sort.bam"]
+        } for N in range (0, TOTAL_SEQ),
+
+        {
+				"command" : template("{SING_RUN}{SING_DIR}/picard_2.23.8--0.sif picard AddOrReplaceReadGroups -I "+RESULTS_DIR+"/SRR7947123.seg{N}.sort.bam -O "+RESULTS_DIR+"/SRR7947123.seg{N}.RG.bam -RGID {N} -RGLB D4 -RGPL illumina_150pe -RGPU GWZHISEQ02:270:C8W2LANXX:8 -RGSM SRR7947123"),
+        "inputs" : [RESULTS_DIR+"/SRR7947123.seg"+N+".sort.bam",
+										 SING_DIR+"/picard_2.23.8--0.sif"],
+        "outputs" : [RESULTS_DIR+"/SRR7947123.seg"+N+".RG.bam"],
+        } for N in range (0, TOTAL_SEQ),
+    ]
+}
+
